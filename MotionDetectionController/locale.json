@@ -1,0 +1,15 @@
+{
+    "translations": {
+        "de": {
+            "Motion Detection Controller": "Bewegungsmelder Modus Controller",
+            "MotionDetector Object": "Bewegungsmelder Variable",
+            "Status": "Status",
+            "Condition for Lights": "Bedingungen zum Schalten der Lichter",
+            "Output Variables": "Ausgabevariablen",
+            "Off Action": "Aktion beim Deakivieren",
+            "Keep the Lights on": "Licht eingeschaltet lassen",
+            "Switch Off immediately": "Sofort ausschalten",
+            "Brightness": "Helligkeit Dimmer beim Anschalten"
+        }
+    }
+}

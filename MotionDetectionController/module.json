@@ -1,0 +1,14 @@
+{
+    "id": "{34B9CBE6-6988-3F90-8D02-8F8E35420412}",
+    "name": "Motion Detection Controller",
+    "type": 3,
+    "vendor": "",
+    "aliases": [
+        "Motion Detection Controller"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "MMDC",
+    "url": "url_tbd"
+}

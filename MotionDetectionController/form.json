@@ -1,0 +1,72 @@
+{
+    "elements": [
+        {
+            "type": "SelectVariable",
+            "name": "MotionDetectorObject",
+            "caption": "MotionDetector Object",
+            "width": "450px"
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Condition for Lights",
+            "items": [{ 
+	        	"type": "SelectCondition", 
+	        	"name": "PropertyCondition", 
+	        	"caption": "Condition for Lights",
+	        	"multi": true 
+	        }]
+	    },
+        {
+            "type": "List",
+            "name": "OutputVariables",
+            "caption": "Output Variables",
+            "add": true,
+            "delete": true,
+            "rowCount": 4,
+            "columns": [
+                {
+                    "name": "VariableID",
+                    "caption": "Variable",
+                    "width": "auto",
+                    "add": 0,
+                    "edit": {
+                        "type": "SelectVariable"
+                    }
+                },
+                {
+                    "name": "Status",
+                    "caption": "Status",
+                    "width": "100px",
+                    "add": "New"
+                }
+            ]
+        },
+        {
+            "type": "Select",
+            "name": "OffAction",
+            "caption": "Off Action",
+            "options": [
+                {
+                    "caption": "Keep the Lights on",
+                    "value": 0
+                },
+                {
+                    "caption": "Switch Off immediately",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "DimBrightness",
+            "visible": true,
+            "caption": "Brightness",
+            "suffix": "%"
+        }
+    ],
+    "actions": [
+        {
+            "type": "TestCenter"
+        }
+    ]
+}
