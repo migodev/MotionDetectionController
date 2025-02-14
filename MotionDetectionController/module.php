@@ -16,7 +16,7 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterPropertyInteger('MotionDetectorObject', 0);
         $this->RegisterPropertyString('PropertyCondition', '');
         $this->RegisterPropertyInteger('OffAction', 0);
-        $this->RegisterPropertyString('OutputVariables', '');
+        $this->RegisterPropertyString('OutputVariables', '[]');
         $this->RegisterPropertyInteger('DimBrightness', 0);      
        
         //Variables
