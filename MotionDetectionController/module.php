@@ -77,7 +77,10 @@ class MotionDetectionController extends IPSModule {
                 $outputVariablesOkCount++;
             }
         }
-        //TODO -> wenn keine Lampen Selektiert, dann trotzdem OK lassen
+        // Keep status OK, also if there are no lights
+        if (count($outputVariables) == 0) {
+            $outputVariablesOkCount = 1; 
+        }
         
         //If we are missing triggers or outputs the instance will not work
         if (($inputTriggerOkCount == 0) || ($outputVariablesOkCount == 0)) {
