@@ -77,6 +77,7 @@ class MotionDetectionController extends IPSModule {
                 $outputVariablesOkCount++;
             }
         }
+        //TODO -> wenn keine Lampen Selektiert, dann trotzdem OK lassen
         
         //If we are missing triggers or outputs the instance will not work
         if (($inputTriggerOkCount == 0) || ($outputVariablesOkCount == 0)) {
@@ -127,6 +128,7 @@ class MotionDetectionController extends IPSModule {
                             $this->CheckAndSwitchLights(false);
                             break;
                     }
+                    $this->SetResult(false);
                 } else {
                     // if enabled, check the motion status and set result
                     $MotionData = GetValueBoolean($this->ReadPropertyInteger("MotionDetectorObject"));
@@ -141,20 +143,18 @@ class MotionDetectionController extends IPSModule {
     private function ValidateAndSetResult($MotionData) {
         $varActive = $this->GetValue('Active');
         if ($varActive === true) {
-            if ($MotionData === true) {
-                $this->SetResult(true);
-            } else {
-                $this->SetResult(false);
-            }
+            $this->SetResult($MotionData);
+            $this->CheckAndSwitchLights($MotionData);
         } else if ($varActive === false) {
             $this->SetResult(false);
         }
     }
     
     private function SetResult (bool $Value) {
-        $this->SetValue('Motion', $Value);
-        
-        $this->CheckAndSwitchLights($Value);
+        $varMotion = $this->GetValue('Motion');
+        if ($varMotion != $Value) {
+            $this->SetValue('Motion', $Value);
+        }
     }
     
     private function CheckAndSwitchLights($Value) {
