@@ -9,7 +9,8 @@
             "Off Action": "Aktion beim Deakivieren",
             "Keep the Lights on": "Licht eingeschaltet lassen",
             "Switch Off immediately": "Sofort ausschalten",
-            "Brightness": "Helligkeit Dimmer beim Anschalten"
+            "Brightness": "Helligkeit Dimmer beim Anschalten",
+            "set Motion Data After Enabling Controller": "Setze Bewegungsmelder Zustand synchron nach Aktivieren des Modus"
         }
     }
 }

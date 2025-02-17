@@ -56,6 +56,11 @@
                 }
             ]
         },
+        { 
+        	"type": "CheckBox", 
+        	"name": "setMotionDataAfterEnablingController", 
+        	"caption": "set Motion Data After Enabling Controller" 
+        },
         {
             "type": "NumberSpinner",
             "name": "DimBrightness",

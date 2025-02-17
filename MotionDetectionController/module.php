@@ -17,7 +17,8 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterPropertyString('PropertyCondition', '');
         $this->RegisterPropertyInteger('OffAction', 0);
         $this->RegisterPropertyString('OutputVariables', '[]');
-        $this->RegisterPropertyInteger('DimBrightness', 0);      
+        $this->RegisterPropertyInteger('DimBrightness', 0);
+        $this->RegisterPropertyBoolean('setMotionDataAfterEnablingController', false);
        
         //Variables
         $ActiveOptions = json_encode([
@@ -134,8 +135,10 @@ class MotionDetectionController extends IPSModule {
                     $this->SetResult(false);
                 } else {
                     // if enabled, check the motion status and set result
-                    $MotionData = GetValueBoolean($this->ReadPropertyInteger("MotionDetectorObject"));
-                    $this->ValidateAndSetResult($MotionData);
+                    if ($this->ReadPropertyBoolean("setMotionDataAfterEnablingController")) {
+                        $MotionData = GetValueBoolean($this->ReadPropertyInteger("MotionDetectorObject"));
+                        $this->ValidateAndSetResult($MotionData);
+                    }
                 }
                 break;
             default:
@@ -191,7 +194,6 @@ class MotionDetectionController extends IPSModule {
             $outputID = $outputVariable['VariableID'];
             
             $doResend = false;
-            
             //Depending on the type we need to switch differently
             switch (IPS_GetVariable($outputID)['VariableType']) {
                 case VARIABLETYPE_BOOLEAN:
@@ -204,7 +206,8 @@ class MotionDetectionController extends IPSModule {
                 case VARIABLETYPE_FLOAT:
                     $dimDevice = function ($Value) use ($outputID, $doResend)
                     {
-                        if ($doResend || (self::getDimValue($outputID) != $Value)) {
+                        $istWert = self::getDimValue($outputID);
+                        if ($doResend || (self::getDimValue($outputID) != $Value)) {                            
                             self::dimDevice($outputID, $Value);
                         }
                     };
