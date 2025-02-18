@@ -206,7 +206,6 @@ class MotionDetectionController extends IPSModule {
                 case VARIABLETYPE_FLOAT:
                     $dimDevice = function ($Value) use ($outputID, $doResend)
                     {
-                        $istWert = self::getDimValue($outputID);
                         if ($doResend || (self::getDimValue($outputID) != $Value)) {                            
                             self::dimDevice($outputID, $Value);
                         }
