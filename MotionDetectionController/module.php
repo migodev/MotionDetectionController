@@ -41,6 +41,8 @@ class MotionDetectionController extends IPSModule {
         
         
         $this->RegisterVariableBoolean('Motion', 'Bewegungsmelder Zustand', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
+        
+        $this->RegisterVariableBoolean('InputMotion', 'Eingangswert', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
     }
     
     public function ApplyChanges() {
@@ -112,6 +114,7 @@ class MotionDetectionController extends IPSModule {
         //https://www.symcon.de/en/service/documentation/developer-area/sdk-tools/sdk-php/messages/
         if ($Message == VM_UPDATE) {          
             $rawMotionData = $Data[0];
+            $this->SetInputValue($rawMotionData);
             $this->ValidateAndSetResult($rawMotionData);
         }
     }
@@ -144,6 +147,10 @@ class MotionDetectionController extends IPSModule {
             default:
                 throw new Exception('Invalid ident');
         }
+    }
+    
+    private function SetInputValue(bool $Value) {
+        $this->SetValue('InputMotion', $Value);
     }
     
     private function ValidateAndSetResult($MotionData) {
