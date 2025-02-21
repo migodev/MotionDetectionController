@@ -16,6 +16,7 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterPropertyInteger('MotionDetectorObject', 0);
         $this->RegisterPropertyString('PropertyCondition', '');
         $this->RegisterPropertyInteger('OffAction', 0);
+        $this->RegisterPropertyInteger('FalseActionIfConditionDosntMatch', 0);
         $this->RegisterPropertyString('OutputVariables', '[]');
         $this->RegisterPropertyInteger('DimBrightness', 0);
         $this->RegisterPropertyBoolean('setMotionDataAfterEnablingController', false);
@@ -165,7 +166,12 @@ class MotionDetectionController extends IPSModule {
                 $this->SetResult(false);
             }
         } else {
-            //do nothing if condition result is false
+            //if condition result is false, do nothing, except we explicit want to execute false values (but only if mode is active
+            // example: Condition checks brightness, true before Limit, light keeps on without limit, because false value were skipped due to not valid condition
+            if (($this->ReadPropertyInteger('FalseActionIfConditionDosntMatch') === 1) && ($MotionData === false) && ($varActive === true)) {
+                $this->SetResult($MotionData);
+                $this->SwitchLights($MotionData);
+            }
         }
     }
     

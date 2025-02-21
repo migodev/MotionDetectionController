@@ -10,7 +10,10 @@
             "Keep the Lights on": "Licht eingeschaltet lassen",
             "Switch Off immediately": "Sofort ausschalten",
             "Brightness": "Helligkeit Dimmer beim Anschalten",
-            "set Motion Data After Enabling Controller": "Setze Bewegungsmelder Zustand synchron nach Aktivieren des Controllers"
+            "set Motion Data After Enabling Controller": "Setze Bewegungsmelder Zustand synchron nach Aktivieren des Controllers",
+            "False Action if Condition dosn't match": "False-Aktion der Eingangsvariable wenn Bedingungen nicht erfüllt sind",
+            "Ignore false Value": "Ignoriere False Meldung",
+            "Execute false Value": "Führe False Meldung aus"
         }
     }
 }
