@@ -60,6 +60,7 @@
             "type": "Select",
             "name": "FalseActionIfConditionDosntMatch",
             "caption": "False Action if Condition dosn't match",
+            "width": "450px",
             "options": [
                 {
                     "caption": "Ignore false Value",
