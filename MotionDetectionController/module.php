@@ -155,11 +155,17 @@ class MotionDetectionController extends IPSModule {
     
     private function ValidateAndSetResult($MotionData) {
         $varActive = $this->GetValue('Active');
-        if ($varActive === true) {
-            $this->SetResult($MotionData);
-            $this->CheckAndSwitchLights($MotionData);
-        } else if ($varActive === false) {
-            $this->SetResult(false);
+        $conditionResult = IPS_IsConditionPassing($this->ReadPropertyString('PropertyCondition'));
+        
+        if ($conditionResult === true) {
+            if ($varActive === true) {
+                $this->SetResult($MotionData);
+                $this->SwitchLights($MotionData);
+            } else if ($varActive === false) {
+                $this->SetResult(false);
+            }
+        } else {
+            //do nothing if condition result is false
         }
     }
     
@@ -170,12 +176,9 @@ class MotionDetectionController extends IPSModule {
         }
     }
     
-    private function CheckAndSwitchLights($Value) {
-        $conditionResult = IPS_IsConditionPassing($this->ReadPropertyString('PropertyCondition'));
-        
-        if ($conditionResult === true) {
-            $this->SwitchVariable($Value);
-        }
+    private function SwitchLights($Value) {
+        $this->SwitchVariable($Value);
+
     }
     
     private function GetOutputStatus($outputID) {
