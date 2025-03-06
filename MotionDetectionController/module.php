@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 include_once __DIR__ . '/helper/autoload.php';
-
+//
 class MotionDetectionController extends IPSModule {
     
     use HelperSwitchDevice;
