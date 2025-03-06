@@ -56,6 +56,22 @@
                 }
             ]
         },
+        {
+            "type": "Select",
+            "name": "FalseActionIfConditionDosntMatch",
+            "caption": "False Action if Condition dosn't match",
+            "width": "450px",
+            "options": [
+                {
+                    "caption": "Ignore false Value",
+                    "value": 0
+                },
+                {
+                    "caption": "Execute false Value",
+                    "value": 1
+                }
+            ]
+        },
         { 
         	"type": "CheckBox", 
         	"name": "setMotionDataAfterEnablingController", 

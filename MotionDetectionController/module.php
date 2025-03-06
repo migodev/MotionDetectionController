@@ -16,6 +16,7 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterPropertyInteger('MotionDetectorObject', 0);
         $this->RegisterPropertyString('PropertyCondition', '');
         $this->RegisterPropertyInteger('OffAction', 0);
+        $this->RegisterPropertyInteger('FalseActionIfConditionDosntMatch', 0);
         $this->RegisterPropertyString('OutputVariables', '[]');
         $this->RegisterPropertyInteger('DimBrightness', 0);
         $this->RegisterPropertyBoolean('setMotionDataAfterEnablingController', false);
@@ -113,7 +114,28 @@ class MotionDetectionController extends IPSModule {
     public function MessageSink($TimeStamp, $SenderID, $Message, $Data) {
         //https://www.symcon.de/en/service/documentation/developer-area/sdk-tools/sdk-php/messages/
         if ($Message == VM_UPDATE) {          
-            $rawMotionData = $Data[0];
+            $getProfileName = function ($variableID)
+            {
+                $variable = IPS_GetVariable($variableID);
+                if ($variable['VariableCustomProfile'] != '') {
+                    return $variable['VariableCustomProfile'];
+                } else {
+                    return $variable['VariableProfile'];
+                }
+            };
+            
+            $isProfileReversed = function ($VariableID) use ($getProfileName)
+            {
+                return preg_match('/\.Reversed$/', $getProfileName($VariableID));
+            };
+            
+            if ($isProfileReversed($SenderID)) {
+                //invert internal value
+                $rawMotionData = !$Data[0];
+            } else {
+                $rawMotionData = $Data[0];
+            }
+
             $this->SetInputValue($rawMotionData);
             $this->ValidateAndSetResult($rawMotionData);
         }
@@ -132,7 +154,7 @@ class MotionDetectionController extends IPSModule {
                         case 0: // keep the lights on
                             break;
                         case 1: // Switch Off immediately
-                            $this->CheckAndSwitchLights(false);
+                            $this->ValidateAndSetResult(false);
                             break;
                     }
                     $this->SetResult(false);
@@ -155,11 +177,22 @@ class MotionDetectionController extends IPSModule {
     
     private function ValidateAndSetResult($MotionData) {
         $varActive = $this->GetValue('Active');
-        if ($varActive === true) {
-            $this->SetResult($MotionData);
-            $this->CheckAndSwitchLights($MotionData);
-        } else if ($varActive === false) {
-            $this->SetResult(false);
+        $conditionResult = IPS_IsConditionPassing($this->ReadPropertyString('PropertyCondition'));
+        
+        if ($conditionResult === true) {
+            if ($varActive === true) {
+                $this->SetResult($MotionData);
+                $this->SwitchLights($MotionData);
+            } else if ($varActive === false) {
+                $this->SetResult(false);
+            }
+        } else {
+            //if condition result is false, do nothing, except we explicit want to execute false values (but only if mode is active
+            // example: Condition checks brightness, true before Limit, light keeps on without limit, because false value were skipped due to not valid condition
+            if (($this->ReadPropertyInteger('FalseActionIfConditionDosntMatch') === 1) && ($MotionData === false) && ($varActive === true)) {
+                $this->SetResult($MotionData);
+                $this->SwitchLights($MotionData);
+            }
         }
     }
     
@@ -170,12 +203,9 @@ class MotionDetectionController extends IPSModule {
         }
     }
     
-    private function CheckAndSwitchLights($Value) {
-        $conditionResult = IPS_IsConditionPassing($this->ReadPropertyString('PropertyCondition'));
-        
-        if ($conditionResult === true) {
-            $this->SwitchVariable($Value);
-        }
+    private function SwitchLights($Value) {
+        $this->SwitchVariable($Value);
+
     }
     
     private function GetOutputStatus($outputID) {
