@@ -14,7 +14,7 @@ class MotionDetectionController extends IPSModule {
         
         //Properties
         $this->RegisterPropertyInteger('MotionDetectorObject', 0);
-        $this->RegisterPropertyString('PropertyCondition', '');
+        $this->RegisterPropertyString('PropertyCondition', '[]');
         $this->RegisterPropertyInteger('OffAction', 0);
         $this->RegisterPropertyInteger('FalseActionIfConditionDosntMatch', 0);
         $this->RegisterPropertyString('OutputVariables', '[]');
@@ -114,22 +114,7 @@ class MotionDetectionController extends IPSModule {
     public function MessageSink($TimeStamp, $SenderID, $Message, $Data) {
         //https://www.symcon.de/en/service/documentation/developer-area/sdk-tools/sdk-php/messages/
         if ($Message == VM_UPDATE) {          
-            $getProfileName = function ($variableID)
-            {
-                $variable = IPS_GetVariable($variableID);
-                if ($variable['VariableCustomProfile'] != '') {
-                    return $variable['VariableCustomProfile'];
-                } else {
-                    return $variable['VariableProfile'];
-                }
-            };
-            
-            $isProfileReversed = function ($VariableID) use ($getProfileName)
-            {
-                return preg_match('/\.Reversed$/', $getProfileName($VariableID));
-            };
-            
-            if ($isProfileReversed($SenderID)) {
+            if ($this->IsVariableProfileReversed($SenderID)) {
                 //invert internal value
                 $rawMotionData = !$Data[0];
             } else {
@@ -162,6 +147,12 @@ class MotionDetectionController extends IPSModule {
                     // if enabled, check the motion status and set result
                     if ($this->ReadPropertyBoolean("setMotionDataAfterEnablingController")) {
                         $MotionData = GetValueBoolean($this->ReadPropertyInteger("MotionDetectorObject"));
+                        
+                        if ($this->IsVariableProfileReversed($this->ReadPropertyInteger("MotionDetectorObject"))) {
+                            //invert internal value
+                            $MotionData = !$MotionData;
+                        }
+                        
                         $this->ValidateAndSetResult($MotionData);
                     }
                 }
@@ -169,6 +160,25 @@ class MotionDetectionController extends IPSModule {
             default:
                 throw new Exception('Invalid ident');
         }
+    }
+    
+    private function IsVariableProfileReversed($variableId) {
+        $getProfileName = function ($variableID)
+        {
+            $variable = IPS_GetVariable($variableID);
+            if ($variable['VariableCustomProfile'] != '') {
+                return $variable['VariableCustomProfile'];
+            } else {
+                return $variable['VariableProfile'];
+            }
+        };
+        
+        $isProfileReversed = function ($VariableID) use ($getProfileName)
+        {
+            return preg_match('/\.Reversed$/', $getProfileName($VariableID));
+        };
+        
+        return $isProfileReversed($variableId);
     }
     
     private function SetInputValue(bool $Value) {
