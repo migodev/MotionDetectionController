@@ -20,7 +20,7 @@ Darüber hinaus können Bedingungen zum Schalten von Lampen und Dimmern benutzt 
 
 ### 2. Voraussetzungen
 
-- IP-Symcon ab Version 7.1
+- IP-Symcon ab Version 8.0
 
 ### 3. Software-Installation
 
