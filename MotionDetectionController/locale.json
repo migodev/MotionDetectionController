@@ -13,7 +13,12 @@
             "set Motion Data After Enabling Controller": "Setze Bewegungsmelder Zustand synchron nach Aktivieren des Controllers",
             "False Action if Condition dosn't match": "False-Aktion der Eingangsvariable wenn Bedingungen nicht erfüllt sind",
             "Ignore false Value": "Ignoriere False Meldung",
-            "Execute false Value": "Führe False Meldung aus"
+            "Execute false Value": "Führe False Meldung aus",
+            "Delay-off control": "Nachlaufsteuerung",
+            "Enable Delay-off control": "Aktiviere Nachlaufsteuerung",
+            "Duration": "Laufzeit",
+            "minutes": "Minuten",
+            "Remaining Time": "Restlaufzeit"
         }
     }
 }

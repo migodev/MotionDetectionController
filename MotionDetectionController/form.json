@@ -42,6 +42,20 @@
             ]
         },
         {
+            "type": "ExpansionPanel",
+            "caption": "Delay-off control",
+            "items": [{ 
+                        "type": "CheckBox", 
+                        "name": "enableDelayOffControl", 
+                        "caption": "Enable Delay-off control" 
+                    },{
+                        "type": "NumberSpinner",
+                        "name": "Duration",
+                        "caption": "Duration",
+                        "suffix": "minutes"
+                    }]
+	    },
+        {
             "type": "Select",
             "name": "OffAction",
             "caption": "Off Action",

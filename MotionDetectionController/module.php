@@ -20,7 +20,12 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterPropertyString('OutputVariables', '[]');
         $this->RegisterPropertyInteger('DimBrightness', 0);
         $this->RegisterPropertyBoolean('setMotionDataAfterEnablingController', false);
+        $this->RegisterPropertyBoolean('enableDelayOffControl', false);
+        $this->RegisterPropertyInteger('Duration', 0);
        
+        //Timers
+        $this->RegisterTimer('DelayOffTimer', 0, "MMDC_DelayOff(\$_IPS['TARGET']);");
+
         //Variables
         $ActiveOptions = json_encode([
             [
@@ -44,6 +49,8 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterVariableBoolean('Motion', 'Bewegungsmelder Zustand', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
         
         $this->RegisterVariableBoolean('InputMotion', 'Eingangswert', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
+        $this->RegisterVariableInteger('Remaining', $this->Translate('Remaining Time'), ['PRESENTATION' => VARIABLE_PRESENTATION_DURATION, 'COUNTDOWN_TYPE' => 1 /* Until value in variable */], 50);
+
     }
     
     public function ApplyChanges() {
@@ -107,6 +114,9 @@ class MotionDetectionController extends IPSModule {
                 'Status' => $this->GetOutputStatus($outputVariable['VariableID'])
             ];
         }
+
+        // Show Delay Off Control if activated
+        $jsonForm['elements'][3]['expanded'] = $this->ReadPropertyBoolean('enableDelayOffControl');
 
         return json_encode($jsonForm);
     }
@@ -191,8 +201,22 @@ class MotionDetectionController extends IPSModule {
         
         if ($conditionResult === true) {
             if ($varActive === true) {
-                $this->SetResult($MotionData);
-                $this->SwitchLights($MotionData);
+                if ($this->ReadPropertyBoolean("enableDelayOffControl") === true) {
+                    //Delay Off Control    
+                    if ($MotionData === true) {
+                        $duration = $this->ReadPropertyInteger('Duration') * 60;
+                        $this->SetTimerInterval('DelayOffTimer', $duration * 1000 );
+                        $this->SetValue('Remaining', time() + $duration);
+                        $this->SetResult($MotionData);
+                        $this->SwitchLights($MotionData);
+                    } else {
+                        // Keep Lights & update only Status
+                        $this->SetResult($MotionData);
+                    }
+                } else {
+                    $this->SetResult($MotionData);
+                    $this->SwitchLights($MotionData);
+                }
             } else if ($varActive === false) {
                 $this->SetResult(false);
             }
@@ -206,6 +230,10 @@ class MotionDetectionController extends IPSModule {
         }
     }
     
+    public function DelayOff() {
+        $this->SwitchLights(false);
+    }
+
     private function SetResult (bool $Value) {
         $varMotion = $this->GetValue('Motion');
         if ($varMotion != $Value) {
