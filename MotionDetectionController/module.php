@@ -49,8 +49,6 @@ class MotionDetectionController extends IPSModule {
         $this->RegisterVariableBoolean('Motion', 'Bewegungsmelder Zustand', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
         
         $this->RegisterVariableBoolean('InputMotion', 'Eingangswert', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
-        $this->RegisterVariableInteger('Remaining', $this->Translate('Remaining Time'), ['PRESENTATION' => VARIABLE_PRESENTATION_DURATION, 'COUNTDOWN_TYPE' => 1 /* Until value in variable */], 50);
-
     }
     
     public function ApplyChanges() {
@@ -80,6 +78,9 @@ class MotionDetectionController extends IPSModule {
             $this->RegisterReference($outputID);
         }
         
+        // Display only if Delay Off Control is enabled
+        $this->MaintainVariable('Remaining', $this->Translate('Remaining Time'), VARIABLETYPE_INTEGER, ['PRESENTATION' => VARIABLE_PRESENTATION_DURATION, 'COUNTDOWN_TYPE' => 1], 10, $this->ReadPropertyBoolean('enableDelayOffControl'));
+
         //Check status column for outputs
         $outputVariables = json_decode($this->ReadPropertyString('OutputVariables'), true);
         $outputVariablesOkCount = 0;
