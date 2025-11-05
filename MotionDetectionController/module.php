@@ -232,6 +232,7 @@ class MotionDetectionController extends IPSModule {
     }
     
     public function DelayOff() {
+        $this->SetTimerInterval('DelayOffTimer', 0 );
         $this->SwitchLights(false);
     }
 
