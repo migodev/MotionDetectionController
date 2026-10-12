@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 include_once __DIR__ . '/helper/autoload.php';
 
-class MotionDetectionController extends IPSModule {
+class MotionDetectionController extends IPSModuleStrict {
     
     use HelperSwitchDevice;
     use HelperDimDevice;
     
-    public function Create() {
+    public function Create(): void {
         parent::Create();
         
         //Properties
@@ -32,26 +32,45 @@ class MotionDetectionController extends IPSModule {
                 'Value' => true,
                 'Caption' => 'Automatik',
                 'IconActive' => false,
-                'Icon' => '',
-                'Color' => 0x00ff00
+                'IconValue' => '',
+                'ColorActive' => true,
+                'ColorValue' => 65280
             ],[
                 'Value' => false,
                 'Caption' => 'Deaktiviert',
                 'IconActive' => false,
-                'Icon' => '',
-                'Color' => 0xff0000
+                'IconValue' => '',
+                'ColorActive' => true,
+                'ColorValue' => 16711680
             ]
         ]);    
+
+        $MotionsOptions = json_encode([
+            [
+                'Value' => true,
+                'Caption' => 'Bewegung erkannt',
+                'IconActive' => false,
+                'IconValue' => '',
+                'ColorValue' => 255,
+                'ColorActive' => true
+            ],[
+                'Value' => false,
+                'Caption' => 'Keine Bewegung',
+                'IconActive' => false,
+                'IconValue' => '',
+                'ColorActive' => false,
+                'ColorValue' => ''
+            ]
+        ]); 
         $this->RegisterVariableBoolean('Active', 'Bewegungsmelder Modus aktiv', ['PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION, 'ICON' => 'power-off', 'OPTIONS' => $ActiveOptions]);
         $this->EnableAction('Active');
         
+        $this->RegisterVariableBoolean('Motion', 'Bewegungsmelder Zustand', ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON' => 'radar', 'OPTIONS' => $MotionsOptions]);
         
-        $this->RegisterVariableBoolean('Motion', 'Bewegungsmelder Zustand', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
-        
-        $this->RegisterVariableBoolean('InputMotion', 'Eingangswert', ['PRESENTATION' => VARIABLE_PRESENTATION_LEGACY, 'ICON' => 'MOTION', "PROFILE" => "~Motion"]);
+        $this->RegisterVariableBoolean('InputMotion', 'Eingangswert', ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'ICON' => 'radar', 'OPTIONS' => $MotionsOptions]);
     }
     
-    public function ApplyChanges() {
+    public function ApplyChanges(): void {
         parent::ApplyChanges();
         
         //Unregister all messages
@@ -104,7 +123,7 @@ class MotionDetectionController extends IPSModule {
         $this->SetStatus($status);
     }
     
-    public function GetConfigurationForm() {
+    public function GetConfigurationForm(): string {
         //Add options to form
         $jsonForm = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
                 
@@ -122,7 +141,7 @@ class MotionDetectionController extends IPSModule {
         return json_encode($jsonForm);
     }
     
-    public function MessageSink($TimeStamp, $SenderID, $Message, $Data) {
+    public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void {
         //https://www.symcon.de/en/service/documentation/developer-area/sdk-tools/sdk-php/messages/
         if ($Message == VM_UPDATE) {          
             if ($this->IsVariableProfileReversed($SenderID)) {
@@ -137,69 +156,63 @@ class MotionDetectionController extends IPSModule {
         }
     }
     
-    public function SetActive(bool $Value) {
+    public function SetActive(bool $Value): void {
         $this->SetValue('Active', $Value);
     }
     
-    public function RequestAction($Ident, $Value) {
+    public function RequestAction(string $Ident, mixed $Value): void {
         switch ($Ident) {
             case 'Active':
                 $this->SetActive($Value);
-                if (!$Value) {
-                    switch ($this->ReadPropertyInteger('OffAction')) {
-                        case 0: // keep the lights on
-                            break;
-                        case 1: // Switch Off immediately
-                            $this->SwitchLights(false);
-                            break;
-                    }
-                    $this->SetResult(false);
-                } else {
-                    // if enabled, check the motion status and set result
-                    if ($this->ReadPropertyBoolean("setMotionDataAfterEnablingController")) {
-                        $MotionData = GetValueBoolean($this->ReadPropertyInteger("MotionDetectorObject"));
-                        
-                        if ($this->IsVariableProfileReversed($this->ReadPropertyInteger("MotionDetectorObject"))) {
-                            //invert internal value
-                            $MotionData = !$MotionData;
-                        }
-                        
-                        $this->ValidateAndSetResult($MotionData);
-                    }
-                }
+                $this->followUpActionsAfterSetActive($Value);
                 break;
             default:
                 throw new Exception('Invalid ident');
         }
     }
     
-    private function IsVariableProfileReversed($variableId) {
-        $getProfileName = function ($variableID)
-        {
-            $variable = IPS_GetVariable($variableID);
-            if ($variable['VariableCustomProfile'] != '') {
-                return $variable['VariableCustomProfile'];
-            } else {
-                return $variable['VariableProfile'];
+    public function followUpActionsAfterSetActive(bool $status): void {
+        if (!$Value) {
+            switch ($this->ReadPropertyInteger('OffAction')) {
+                case 0: // keep the lights on
+                    break;
+                case 1: // Switch Off immediately
+                    $this->SwitchLights(false);
+                    $this->SendDebug('OffAction', "Switch Off immediately", 0);
+                    break;
             }
-        };
-        
-        $isProfileReversed = function ($VariableID) use ($getProfileName)
-        {
-            return preg_match('/\.Reversed$/', $getProfileName($VariableID));
-        };
-        
-        return $isProfileReversed($variableId);
+            $this->SetResult(false);
+        } else {
+            // if enabled, check the motion status and set result
+            if ($this->ReadPropertyBoolean("setMotionDataAfterEnablingController")) {
+                $MotionData = GetValueBoolean($this->ReadPropertyInteger("MotionDetectorObject"));
+                
+                if ($this->IsVariableProfileReversed($this->ReadPropertyInteger("MotionDetectorObject"))) {
+                    //invert internal value
+                    $MotionData = !$MotionData;
+                }
+                $this->SendDebug('setMotionDataAfterEnablingController', "Motion Detector Input: ".json_encode($MotionData), 0);
+                $this->ValidateAndSetResult($MotionData);
+            }
+        }
+    }
+
+    private function IsVariableProfileReversed(int $variableId): bool {
+        $presentation = self::resolvePresentation($variableId);
+        $this->SendDebug('IsVariableProfileReversed', json_encode($presentation['reversed']), 0);
+        return $presentation['reversed'];
     }
     
-    private function SetInputValue(bool $Value) {
+    private function SetInputValue(bool $Value): void {
         $this->SetValue('InputMotion', $Value);
+        $this->SendDebug('SetInputValue', json_encode($Value), 0);
     }
     
-    private function ValidateAndSetResult($MotionData) {
+    private function ValidateAndSetResult(bool $MotionData): void {
         $varActive = $this->GetValue('Active');
         $conditionResult = IPS_IsConditionPassing($this->ReadPropertyString('PropertyCondition'));
-        
+        $this->SendDebug('validation', "conditionResult: ". json_encode($conditionResult), 0);
+
         if ($conditionResult === true) {
             if ($varActive === true) {
                 if ($this->ReadPropertyBoolean("enableDelayOffControl") === true) {
@@ -207,6 +220,7 @@ class MotionDetectionController extends IPSModule {
                     if ($MotionData === true) {
                         $duration = $this->ReadPropertyInteger('Duration') * 60;
                         $this->SetTimerInterval('DelayOffTimer', $duration * 1000 );
+                        $this->SendDebug('delayOff-control', "timer start: ". $duration ." seconds", 0);
                         $this->SetValue('Remaining', time() + $duration);
                         $this->SetResult($MotionData);
                         $this->SwitchLights($MotionData);
@@ -225,30 +239,33 @@ class MotionDetectionController extends IPSModule {
             //if condition result is false, do nothing, except we explicit want to execute false values (but only if mode is active
             // example: Condition checks brightness, true before Limit, light keeps on without limit, because false value were skipped due to not valid condition
             if (($this->ReadPropertyInteger('FalseActionIfConditionDosntMatch') === 1) && ($MotionData === false) && ($varActive === true) && ($this->ReadPropertyBoolean("enableDelayOffControl") === false)) {
+                $this->SendDebug('validation', "conditionResult: is false, but we want to execute false values (FalseActionIfConditionDosntMatch is true)", 0);
                 $this->SetResult($MotionData);
                 $this->SwitchLights($MotionData);
             }
         }
     }
     
-    public function DelayOff() {
+    public function DelayOff(): void {
         $this->SetTimerInterval('DelayOffTimer', 0 );
         $this->SwitchLights(false);
+        $this->SendDebug('delayOff-control', "Set to off", 0);
     }
 
-    private function SetResult (bool $Value) {
+    private function SetResult (bool $Value): void {
         $varMotion = $this->GetValue('Motion');
         if ($varMotion != $Value) {
+            $this->SendDebug('set-result', "Set motion to ".json_encode($Value), 0);
             $this->SetValue('Motion', $Value);
         }
     }
     
-    private function SwitchLights($Value) {
+    private function SwitchLights(bool $Value): void {
         $this->SwitchVariable($Value);
 
     }
     
-    private function GetOutputStatus($outputID) {
+    private function GetOutputStatus(int $outputID): string {
         if (!IPS_VariableExists($outputID)) {
             return 'Missing';
         } else {
@@ -264,7 +281,7 @@ class MotionDetectionController extends IPSModule {
         }
     }
     
-    private function SwitchVariable(bool $Value) {
+    private function SwitchVariable(bool $Value): void {
         
         $outputVariables = json_decode($this->ReadPropertyString('OutputVariables'), true);
         foreach ($outputVariables as $outputVariable) {
@@ -276,6 +293,7 @@ class MotionDetectionController extends IPSModule {
                 case VARIABLETYPE_BOOLEAN:
                     if ($doResend || (self::getSwitchValue($outputID) != $Value)) {
                         self::switchDevice($outputID, $Value);
+                        $this->SendDebug('SwitchVariable', "Set switch to ".json_encode($Value), 0);
                     }
                     break;
                     
@@ -294,8 +312,10 @@ class MotionDetectionController extends IPSModule {
                             $brightness = 100;
                         }
                         $dimDevice($brightness);
+                        $this->SendDebug('SwitchVariable', "Set dimmer to ".json_encode($brightness), 0);
                     } else {
                         $dimDevice(0);
+                        $this->SendDebug('SwitchVariable', "Set dimmer to 0", 0);
                     }
                     break;
                     

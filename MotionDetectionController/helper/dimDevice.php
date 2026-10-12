@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+include_once __DIR__ . '/variablePresentation.php';
+
 trait HelperDimDevice
 {
-    private static function getDimCompatibility($variableID)
+    use HelperVariablePresentation;
+
+    private static function getDimCompatibility($variableID, $requireAction = true)
     {
         if (!IPS_VariableExists($variableID)) {
             return 'Missing';
@@ -12,64 +16,80 @@ trait HelperDimDevice
 
         $targetVariable = IPS_GetVariable($variableID);
 
-        if ($targetVariable['VariableType'] != 1 /* Integer */ && $targetVariable['VariableType'] != 2 /* Float */) {
-            return 'Int/Float required';
+        if ($targetVariable['VariableType'] != VARIABLETYPE_INTEGER && $targetVariable['VariableType'] != VARIABLETYPE_FLOAT) {
+            return 'Integer/Float required';
         }
 
-        if ($targetVariable['VariableCustomProfile'] != '') {
-            $profileName = $targetVariable['VariableCustomProfile'];
-        } else {
-            $profileName = $targetVariable['VariableProfile'];
+        $presentation = self::resolvePresentation($variableID);
+        if ($presentation === false) {
+            return 'Presentation required';
         }
 
-        if (!IPS_VariableProfileExists($profileName)) {
-            return 'Profile required';
+        switch ($presentation['kind']) {
+            case 'legacy':
+                if (!$presentation['profileExists']) {
+                    return 'Profile required';
+                }
+                if (($presentation['max'] - $presentation['min']) <= 0) {
+                    return 'Profile not dimmable';
+                }
+                break;
+
+            case 'slider':
+            case 'valuePresentation':
+            case 'shutter':
+                if (($presentation['max'] - $presentation['min']) <= 0) {
+                    return 'Presentation not dimmable';
+                }
+                break;
+
+            default:
+                return 'Unsupported presentation';
         }
 
-        $profile = IPS_GetVariableProfile($profileName);
-
-        if (($profile['MaxValue'] - $profile['MinValue']) <= 0) {
-            return 'Profile not dimmable';
-        }
-
-        if ($targetVariable['VariableCustomAction'] != 0) {
-            $profileAction = $targetVariable['VariableCustomAction'];
-        } else {
-            $profileAction = $targetVariable['VariableAction'];
-        }
-
-        if (!($profileAction > 10000)) {
+        if ($requireAction && !HasAction($variableID)) {
             return 'Action required';
         }
 
         return 'OK';
     }
 
-    private static function getDimValue($variableID)
+    private static function getDimValue($variableID, $overrides = [])
     {
-        $targetVariable = IPS_GetVariable($variableID);
-
-        if ($targetVariable['VariableCustomProfile'] != '') {
-            $profileName = $targetVariable['VariableCustomProfile'];
-        } else {
-            $profileName = $targetVariable['VariableProfile'];
-        }
-
-        $profile = IPS_GetVariableProfile($profileName);
-
-        if (($profile['MaxValue'] - $profile['MinValue']) <= 0) {
+        $presentation = self::resolvePresentation($variableID);
+        if ($presentation === false) {
             return 0;
         }
 
-        $valueToPercent = function ($value) use ($profile)
-        {
-            return (($value - $profile['MinValue']) / ($profile['MaxValue'] - $profile['MinValue'])) * 100;
-        };
+        switch ($presentation['kind']) {
+            case 'legacy':
+                if (!$presentation['profileExists']) {
+                    return 0;
+                }
+                break;
 
-        $value = $valueToPercent(GetValue($variableID));
+            case 'slider':
+            case 'valuePresentation':
+            case 'shutter':
+                break;
+
+            default:
+                //Return 0 like every other failure path, so callers can safely do arithmetic on the result
+                return 0;
+        }
+
+        $maxValue = $overrides['MAX'] ?? $presentation['max'];
+        $minValue = $overrides['MIN'] ?? $presentation['min'];
+        $reversed = $overrides['REVERSED'] ?? $presentation['reversed'];
+
+        if (($maxValue - $minValue) <= 0) {
+            return 0;
+        }
+
+        $value = round(((GetValue($variableID) - $minValue) / ($maxValue - $minValue)) * 100, 5);
 
         // Revert value for reversed profile
-        if (preg_match('/\.Reversed$/', $profileName)) {
+        if ($reversed) {
             $value = 100 - $value;
         }
 
@@ -78,64 +98,56 @@ trait HelperDimDevice
 
     private static function dimDevice($variableID, $value)
     {
-        if (!IPS_VariableExists($variableID)) {
+        $absoluteValue = self::percentToAbsolute($variableID, $value);
+
+        if ($absoluteValue === false) {
             return false;
         }
 
-        $targetVariable = IPS_GetVariable($variableID);
-
-        if ($targetVariable['VariableCustomProfile'] != '') {
-            $profileName = $targetVariable['VariableCustomProfile'];
-        } else {
-            $profileName = $targetVariable['VariableProfile'];
-        }
-
-        if (!IPS_VariableProfileExists($profileName)) {
+        if (!HasAction($variableID)) {
             return false;
         }
 
-        // Revert value for reversed profile
-        if (preg_match('/\.Reversed$/', $profileName)) {
+        return RequestActionEx($variableID, $absoluteValue, 'VoiceControl');
+    }
+
+    private static function percentToAbsolute($variableID, $value, $overrides = [])
+    {
+        $presentation = self::resolvePresentation($variableID);
+        if ($presentation === false) {
+            return false;
+        }
+
+        switch ($presentation['kind']) {
+            case 'legacy':
+                if (!$presentation['profileExists']) {
+                    return false;
+                }
+                break;
+
+            case 'slider':
+            case 'valuePresentation':
+            case 'shutter':
+                break;
+
+            default:
+                return false;
+        }
+
+        $maxValue = $overrides['MAX'] ?? $presentation['max'];
+        $minValue = $overrides['MIN'] ?? $presentation['min'];
+        $reversed = $overrides['REVERSED'] ?? $presentation['reversed'];
+
+        if ($reversed) {
             $value = 100 - $value;
         }
 
-        $profile = IPS_GetVariableProfile($profileName);
-
-        if (($profile['MaxValue'] - $profile['MinValue']) <= 0) {
+        if (($maxValue - $minValue) <= 0) {
             return false;
         }
 
-        if ($targetVariable['VariableCustomAction'] != 0) {
-            $profileAction = $targetVariable['VariableCustomAction'];
-        } else {
-            $profileAction = $targetVariable['VariableAction'];
-        }
-
-        if ($profileAction < 10000) {
-            return false;
-        }
-
-        $percentToValue = function ($value) use ($profile)
-        {
-            return (max(0, min($value, 100)) / 100) * ($profile['MaxValue'] - $profile['MinValue']) + $profile['MinValue'];
-        };
-
-        if ($targetVariable['VariableType'] == 1 /* Integer */) {
-            $value = intval($percentToValue($value));
-        } elseif ($targetVariable['VariableType'] == 2 /* Float */) {
-            $value = floatval($percentToValue($value));
-        } else {
-            return false;
-        }
-
-        if (IPS_InstanceExists($profileAction)) {
-            IPS_RunScriptText('IPS_RequestAction(' . var_export($profileAction, true) . ', ' . var_export(IPS_GetObject($variableID)['ObjectIdent'], true) . ', ' . var_export($value, true) . ');');
-        } elseif (IPS_ScriptExists($profileAction)) {
-            IPS_RunScriptEx($profileAction, ['VARIABLE' => $variableID, 'VALUE' => $value, 'SENDER' => 'VoiceControl']);
-        } else {
-            return false;
-        }
-
-        return true;
+        return round((max(0, min($value, 100)) / 100) * ($maxValue - $minValue) + $minValue, 5);
     }
 }
+
+?>

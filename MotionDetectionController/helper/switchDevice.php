@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+include_once __DIR__ . '/variablePresentation.php';
+
 trait HelperSwitchDevice
 {
-    private static function getSwitchCompatibility($variableID)
+    use HelperVariablePresentation;
+
+    private static function getSwitchCompatibility($variableID, $requireAction = true)
     {
         if (!IPS_VariableExists($variableID)) {
             return 'Missing';
@@ -12,17 +16,11 @@ trait HelperSwitchDevice
 
         $targetVariable = IPS_GetVariable($variableID);
 
-        if ($targetVariable['VariableType'] != 0 /* Boolean */) {
-            return 'Bool required';
+        if ($targetVariable['VariableType'] != VARIABLETYPE_BOOLEAN) {
+            return 'Boolean required';
         }
 
-        if ($targetVariable['VariableCustomAction'] != 0) {
-            $profileAction = $targetVariable['VariableCustomAction'];
-        } else {
-            $profileAction = $targetVariable['VariableAction'];
-        }
-
-        if (!($profileAction > 10000)) {
+        if ($requireAction && !HasAction($variableID)) {
             return 'Action required';
         }
 
@@ -31,18 +29,16 @@ trait HelperSwitchDevice
 
     private static function getSwitchValue($variableID)
     {
-        $targetVariable = IPS_GetVariable($variableID);
-
-        if ($targetVariable['VariableCustomProfile'] != '') {
-            $profileName = $targetVariable['VariableCustomProfile'];
-        } else {
-            $profileName = $targetVariable['VariableProfile'];
+        if (!IPS_VariableExists($variableID)) {
+            return false;
         }
 
         $value = GetValue($variableID);
 
+        $presentation = self::resolvePresentation($variableID);
+
         // Revert value for reversed profile
-        if (preg_match('/\.Reversed$/', $profileName)) {
+        if (($presentation !== false) && $presentation['reversed']) {
             $value = !$value;
         }
 
@@ -55,43 +51,25 @@ trait HelperSwitchDevice
             return false;
         }
 
+        if (!HasAction($variableID)) {
+            return false;
+        }
+
         $targetVariable = IPS_GetVariable($variableID);
 
-        if ($targetVariable['VariableCustomProfile'] != '') {
-            $profileName = $targetVariable['VariableCustomProfile'];
-        } else {
-            $profileName = $targetVariable['VariableProfile'];
-        }
-
-        if ($targetVariable['VariableCustomAction'] != 0) {
-            $profileAction = $targetVariable['VariableCustomAction'];
-        } else {
-            $profileAction = $targetVariable['VariableAction'];
-        }
-
-        if ($profileAction < 10000) {
+        if ($targetVariable['VariableType'] != VARIABLETYPE_BOOLEAN) {
             return false;
         }
 
-        if ($targetVariable['VariableType'] == 0 /* Boolean */) {
-            $value = boolval($value);
-        } else {
-            return false;
-        }
+        $presentation = self::resolvePresentation($variableID);
 
         // Revert value for reversed profile
-        if (preg_match('/\.Reversed$/', $profileName)) {
+        if (($presentation !== false) && $presentation['reversed']) {
             $value = !$value;
         }
 
-        if (IPS_InstanceExists($profileAction)) {
-            IPS_RunScriptText('IPS_RequestAction(' . var_export($profileAction, true) . ', ' . var_export(IPS_GetObject($variableID)['ObjectIdent'], true) . ', ' . var_export($value, true) . ');');
-        } elseif (IPS_ScriptExists($profileAction)) {
-            IPS_RunScriptEx($profileAction, ['VARIABLE' => $variableID, 'VALUE' => $value, 'SENDER' => 'VoiceControl']);
-        } else {
-            return false;
-        }
-
-        return true;
+        return RequestActionEx($variableID, $value, 'VoiceControl');
     }
 }
+
+?>
