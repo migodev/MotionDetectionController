@@ -303,6 +303,7 @@ class MotionDetectionController extends IPSModuleStrict {
                     {
                         if ($doResend || (self::getDimValue($outputID) != $Value)) {                            
                             self::dimDevice($outputID, $Value);
+                            $this->SendDebug('SwitchVariable', "Set dimmer to ".json_encode($Value), 0);
                         }
                     };
                     
@@ -312,10 +313,8 @@ class MotionDetectionController extends IPSModuleStrict {
                             $brightness = 100;
                         }
                         $dimDevice($brightness);
-                        $this->SendDebug('SwitchVariable', "Set dimmer to ".json_encode($brightness), 0);
                     } else {
                         $dimDevice(0);
-                        $this->SendDebug('SwitchVariable', "Set dimmer to 0", 0);
                     }
                     break;
                     
