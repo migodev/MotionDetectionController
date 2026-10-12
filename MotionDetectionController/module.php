@@ -172,7 +172,7 @@ class MotionDetectionController extends IPSModuleStrict {
     }
     
     public function followUpActionsAfterSetActive(bool $status): void {
-        if (!$Value) {
+        if (!$status) {
             switch ($this->ReadPropertyInteger('OffAction')) {
                 case 0: // keep the lights on
                     break;
