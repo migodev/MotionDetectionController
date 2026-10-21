@@ -33,17 +33,15 @@ class MotionDetectionController extends IPSModuleStrict {
                 'Caption' => 'Automatik',
                 'IconActive' => false,
                 'IconValue' => '',
-                'ColorActive' => true,
-                'ColorValue' => 65280
+                'Color' => 65280
             ],[
                 'Value' => false,
                 'Caption' => 'Deaktiviert',
                 'IconActive' => false,
                 'IconValue' => '',
-                'ColorActive' => true,
-                'ColorValue' => 16711680
+                'Color' => 16711680
             ]
-        ]);    
+        ]); 
 
         $MotionsOptions = json_encode([
             [
@@ -62,6 +60,7 @@ class MotionDetectionController extends IPSModuleStrict {
                 'ColorValue' => ''
             ]
         ]); 
+        
         $this->RegisterVariableBoolean('Active', 'Bewegungsmelder Modus aktiv', ['PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION, 'ICON' => 'power-off', 'OPTIONS' => $ActiveOptions]);
         $this->EnableAction('Active');
         
