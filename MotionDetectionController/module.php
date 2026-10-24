@@ -49,15 +49,15 @@ class MotionDetectionController extends IPSModuleStrict {
                 'Caption' => 'Bewegung erkannt',
                 'IconActive' => false,
                 'IconValue' => '',
-                'ColorValue' => 255,
-                'ColorActive' => true
+                'ColorActive' => true,
+                'ColorValue' => 255
             ],[
                 'Value' => false,
                 'Caption' => 'Keine Bewegung',
                 'IconActive' => false,
                 'IconValue' => '',
                 'ColorActive' => false,
-                'ColorValue' => ''
+                'ColorValue' => -1
             ]
         ]); 
         
