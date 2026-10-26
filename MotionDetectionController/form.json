@@ -21,6 +21,7 @@
             "name": "OutputVariables",
             "caption": "Output Variables",
             "add": true,
+            "multiAdd": true,
             "delete": true,
             "rowCount": 4,
             "columns": [
