@@ -100,7 +100,6 @@ class MotionDetectionController extends IPSModuleStrict {
         $this->MaintainVariable('Remaining', $this->Translate('Remaining Time'), VARIABLETYPE_INTEGER, ['PRESENTATION' => VARIABLE_PRESENTATION_DURATION, 'COUNTDOWN_TYPE' => 1], 10, $this->ReadPropertyBoolean('enableDelayOffControl'));
 
         //Check status column for outputs
-        $outputVariables = json_decode($this->ReadPropertyString('OutputVariables'), true);
         $outputVariablesOkCount = 0;
         foreach ($outputVariables as $outputVariable) {
             if ($this->GetOutputStatus($outputVariable['VariableID']) == 'OK') {
